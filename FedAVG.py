@@ -49,11 +49,17 @@ def run(args):
     chinaphys.load_model(model)
 
     st_petersburg.train_to_convergence()
+    stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_test()
     ptb_diag.train_to_convergence()
+    ptb_fpr, ptb_tpr , ptb_roc = ptb_diag.predict_test() 
     chapman.train_to_convergence()
+    chp_fpr, chp_tpr , chp_roc = chapman.predict_test() 
     ningbo.train_to_convergence()
+    ngb_fpr, ngb_tpr , ngb_roc = ningbo.predict_test() 
     georgia.train_to_convergence()
+    grg_fpr, grg_tpr , grg_roc = georgia.predict_test() 
     chinaphys.train_to_convergence()
+    chn_fpr, chn_tpr , chn_roc = chinaphys.predict_test()
 
     central_unit.update_weight_list(st_petersburg.get_weights())
     central_unit.update_weight_list(ptb_diag.get_weights())
@@ -69,6 +75,16 @@ def run(args):
     ningbo.set_weights(global_weights)
     georgia.set_weights(global_weights)
     chinaphys.set_weights(global_weights)
+
+    ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
+    ptb_xl.set_weights(global_weights)
+    fpr, tpr, test_auroc = ptb_xl.predict_test()
+    print("AUROC on test data without TFL = ", test_auroc)
+    ptb_xl.prepare_for_transfer_learning()
+    ptb_xl.train_to_convergence()
+    fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
+    print("AUROC on test data with TFL = ", test_auroc_tfl)
+
 
 if __name__ == '__main__':
     run(get_parser().parse_args(sys.argv[1:]))

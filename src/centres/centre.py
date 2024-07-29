@@ -40,9 +40,9 @@ class LocalHospital:
         fpr, tpr, _ = roc_curve(self.y_test.ravel(), test_hat.ravel())
         test_auroc = roc_auc_score(self.y_test.ravel(), test_hat.ravel())
         
-        plt.figure()
-        plt.plot(fpr, tpr, label='micro-average ROC curve (area = {0:0.2f})'''.format(test_auroc))
-        plt.show()
+        #plt.figure()
+        #plt.plot(fpr, tpr, label='micro-average ROC curve (area = {0:0.2f})'''.format(test_auroc))
+        #plt.show()
 
         return fpr, tpr, test_auroc
     
@@ -72,21 +72,60 @@ class LocalHospital:
         
         print("Training complete")
 
+    @staticmethod
+    def batch_generator(batch_size, gen_data): 
+        batch_features = np.zeros((batch_size,1000, 12))
+        batch_labels = np.zeros((batch_size,30)) #drop undef class
+        while True:
+            for i in range(batch_size):
+                batch_features[i], batch_labels[i] = next(gen_data) 
+            yield batch_features, batch_labels
+
+    
+    staticmethod
+    def generate_data(X,y):
+        while True:
+            for i in range(len(y)):
+                y_out = y[i]
+                X_out = X[i]
+                yield X_out, y_out
+    
+    def set_generator(self):
+        self.bgen = self.batch_generator(30,self.generate_data(self.X_train,self.y_train))
+    
+    def train_one_batch(self):
+        loss_fn =tf.keras.losses.BinaryFocalCrossentropy(from_logits=True)
+        X_batch, y_batch = next(self.bgen)
+        with tf.GradientTape() as tape:
+            # Forward pass
+            logits = self.model(X_batch, training=True)
+            loss = loss_fn(y_batch, logits)
+    
+        gradients = tape.gradient(loss, self.model.trainable_variables)
+        return gradients
+    
 
 class CentralModelDistributor:
     def __init__(self, input_shape, output_shape):
         self.model = build_iception_model(input_shape, output_shape)
-        self.weigh_list = []
+        self.weight_list = []
+        self.grads_list = []
+        self.set_optimizer()
     
     def get_model(self):
         return self.model
     
+    def set_optimizer(self):
+        self.optimizer = tf.keras.optimizers.Adam()
+        
+
     def update_weight_list(self, new_weights):
-        self.weigh_list.append(new_weights)
+        self.weight_list.append(new_weights)
 
     def return_avg_weights(self):
-        avg_weight = np.asarray(self.weigh_list).mean(axis=0)
-        self.weigh_list = []
+        summed_weights = [sum(w) for w in zip(*self.weight_list)]
+        avg_weight = [w / len(self.weight_list) for w in summed_weights]
+        self.weight_list = []
         return avg_weight
     
     def load_weights_to_model(self, weights):
@@ -95,12 +134,21 @@ class CentralModelDistributor:
     def get_weights_from_model(self):
         return self.model.get_weights()
     
+    def update_grads_list(self, new_grads):
+        self.grads_list.append(new_grads)
+    
+    def apply_grads(self):
+        summed_grads = [sum(g) for g in zip(*self.grads_list)]
+        self.optimizer.apply_gradients(zip(summed_grads, self.model.trainable_variables))
+        self.grads_list = []
+    
 
 class ExternalValidationHospital:
     def __init__(self, name, X_path, y_path):
         self.name = name
         self.X_data, self.y_data = np.load(X_path), np.load(y_path)
         self.val_auroc = []
+        self.X_data = np.moveaxis(self.X_data,1,-1)
         print(self.X_data.shape)
         print(self.y_data.shape)
         self.train_val_test_split()
