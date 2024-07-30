@@ -37,9 +37,10 @@ class LocalHospital:
 
     def predict_test(self):
         test_hat = self.model.predict(self.X_test)
+        print(self.model.evaluate(self.X_test, self.y_test))
         fpr, tpr, _ = roc_curve(self.y_test.ravel(), test_hat.ravel())
         test_auroc = roc_auc_score(self.y_test.ravel(), test_hat.ravel())
-        
+        print("Val AUC: ", test_auroc)
         #plt.figure()
         #plt.plot(fpr, tpr, label='micro-average ROC curve (area = {0:0.2f})'''.format(test_auroc))
         #plt.show()
@@ -82,7 +83,7 @@ class LocalHospital:
             yield batch_features, batch_labels
 
     
-    staticmethod
+    @staticmethod
     def generate_data(X,y):
         while True:
             for i in range(len(y)):
@@ -91,7 +92,8 @@ class LocalHospital:
                 yield X_out, y_out
     
     def set_generator(self):
-        self.bgen = self.batch_generator(30,self.generate_data(self.X_train,self.y_train))
+        self.dat_gen = self.generate_data(self.X_train,self.y_train)
+        self.bgen = self.batch_generator(30,self.dat_gen)
     
     def train_one_batch(self):
         loss_fn =tf.keras.losses.BinaryFocalCrossentropy(from_logits=True)
@@ -166,12 +168,9 @@ class ExternalValidationHospital:
 
     def predict_test(self):
         test_hat = self.model.predict(self.X_test)
+        print(self.model.evaluate(self.X_test, self.y_test))
         fpr, tpr, _ = roc_curve(self.y_test.ravel(), test_hat.ravel())
         test_auroc = roc_auc_score(self.y_test.ravel(), test_hat.ravel())
-        
-        plt.figure()
-        plt.plot(fpr, tpr, label='micro-average ROC curve (area = {0:0.2f})'''.format(test_auroc))
-        plt.show()
 
         return fpr, tpr, test_auroc
     
@@ -180,7 +179,7 @@ class ExternalValidationHospital:
     
     def prepare_for_transfer_learning(self):
         self.model.trainable = False
-        for layer in self.model.layers[-2]:
+        for layer in self.model.layers[-2:]:
             layer.trainable = True
     
     def set_weights(self, weights):

@@ -31,7 +31,8 @@ def run(args):
     model = central_unit.get_model()
 
     ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
-    
+    ptb_xl.load_model(model)
+
     st_petersburg = LocalHospital("st_petersburg", os.path.join(args.data_folder, "X_data_stpeter.npy"),os.path.join(args.data_folder, "y_data_stpeter.npy"))
     st_petersburg.load_model(model)
     st_petersburg.set_generator()
@@ -90,13 +91,13 @@ def run(args):
         georgia.set_weights(global_weights)
         chinaphys.set_weights(global_weights)
 
-        ptb_xl.set_weights(global_weights)
-        fpr, tpr, test_auroc = ptb_xl.predict_test()
-        print("AUROC on test data without TFL = ", test_auroc)
-        ptb_xl.prepare_for_transfer_learning()
-        ptb_xl.train_to_convergence()
-        fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
-        print("AUROC on test data with TFL = ", test_auroc_tfl)
+    ptb_xl.set_weights(global_weights)
+    fpr, tpr, test_auroc = ptb_xl.predict_test()
+    print("AUROC on test data without TFL = ", test_auroc)
+    ptb_xl.prepare_for_transfer_learning()
+    ptb_xl.train_to_convergence()
+    fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
+    print("AUROC on test data with TFL = ", test_auroc_tfl)
 
 
 
