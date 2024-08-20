@@ -11,6 +11,7 @@ import argparse
 import sys
 import yaml
 import os
+import pandas as pd
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -27,11 +28,33 @@ def get_parser():
 def run(args):
     # implement code here:
     central_trainer = CentralTrainer((1000,12), 30)
-    for dataset in os.listdir(args.data_folder):
-        if dataset.startswith("X") and not dataset.endswith("ptbxl.npy"):
-            central_trainer.load_data(os.path.join(args.data_folder,dataset), os.path.join(args.data_folder, dataset.replace("X","y")))
-    central_trainer.train_val_split()
-    central_trainer.train_to_convergence()
+
+    st_petersburg = LocalHospital("st_petersburg", os.path.join(args.data_folder, "X_data_stpeter.npy"),os.path.join(args.data_folder, "y_data_stpeter.npy"))
+    ptb_diag = LocalHospital("PTB diag", os.path.join(args.data_folder, "X_data_ptbdiag.npy"),os.path.join(args.data_folder, "y_data_ptbdiag.npy"))
+    chapman = LocalHospital("chapman", os.path.join(args.data_folder, "X_data_chapman.npy"),os.path.join(args.data_folder, "y_data_chapman.npy"))
+    ningbo = LocalHospital("ningbo", os.path.join(args.data_folder, "X_data_ningbo.npy"),os.path.join(args.data_folder, "y_data_ningbo.npy"))
+    georgia = LocalHospital("georgia", os.path.join(args.data_folder, "X_data_georgia.npy"),os.path.join(args.data_folder, "y_data_georgia.npy"))
+    chinaphys = LocalHospital("chinaphys", os.path.join(args.data_folder, "X_data_chinaphys.npy"),os.path.join(args.data_folder, "y_data_chinaphys.npy"))
+    
+    central_trainer.load_train_data_from_centre(st_petersburg.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(st_petersburg.get_data(split="val"))
+
+    central_trainer.load_train_data_from_centre(ptb_diag.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(ptb_diag.get_data(split="val"))
+
+    central_trainer.load_train_data_from_centre(chapman.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(chapman.get_data(split="val"))
+
+    central_trainer.load_train_data_from_centre(ningbo.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(ningbo.get_data(split="val"))
+
+    central_trainer.load_train_data_from_centre(georgia.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(georgia.get_data(split="val"))
+
+    central_trainer.load_train_data_from_centre(chinaphys.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(chinaphys.get_data(split="val"))
+
+    central_trainer.train_to_convergence("./collaborative_data_sharing.csv")
     model = central_trainer.get_model()
 
     ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
@@ -42,6 +65,7 @@ def run(args):
     ptb_xl.train_to_convergence()
     fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
     print("AUROC on test data with TFL = ", test_auroc_tfl)
+    pd.DataFrame({"fpr":fpr_tfl, "tpr": tpr_tfl}).to_csv("collaborative_data_sharing_roc.csv")
 
 if __name__ == '__main__':
     run(get_parser().parse_args(sys.argv[1:]))

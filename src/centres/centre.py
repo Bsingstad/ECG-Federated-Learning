@@ -21,39 +21,36 @@ class LocalHospital:
         self.model = model
 
     def train_val_test_split(self):
-        X_train_temp, self.X_test, y_train_temp, self.y_test = train_test_split(self.X_data, self.y_data, test_size=0.20, random_state=42) #20% test
-        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(X_train_temp, y_train_temp, test_size=0.1875, random_state=42) #15% val
+        self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(self.X_data, self.y_data, test_size=0.20, random_state=42) #20% val
 
     def train_one_epoch(self):
         batch_size = 32
         if self.X_train.shape[0] < 100:
             batch_size = 10 # an exeption for very small dataset
-        self.model.fit(self.X_data,self.y_data, epochs=1, batch_size = batch_size, 
+        self.model.fit(self.X_train,self.y_train, epochs=1, batch_size = batch_size, 
                        steps_per_epoch = self.X_train.shape[0]//batch_size)
 
     def predict_val(self):
         val_hat = self.model.predict(self.X_val)
-        self.val_auroc.append(roc_auc_score(self.y_val, val_hat))
-
-    def predict_test(self):
-        test_hat = self.model.predict(self.X_test)
-        print(self.model.evaluate(self.X_test, self.y_test))
-        fpr, tpr, _ = roc_curve(self.y_test.ravel(), test_hat.ravel())
-        test_auroc = roc_auc_score(self.y_test.ravel(), test_hat.ravel())
-        print("Val AUC: ", test_auroc)
-        #plt.figure()
-        #plt.plot(fpr, tpr, label='micro-average ROC curve (area = {0:0.2f})'''.format(test_auroc))
-        #plt.show()
-
-        return fpr, tpr, test_auroc
+        print(self.model.evaluate(self.X_val, self.y_val))
+        self.val_auroc.append(roc_auc_score(self.y_val.ravel(), val_hat.ravel()))
+        fpr, tpr, _ = roc_curve(self.y_val.ravel(), val_hat.ravel())
+        val_auroc = roc_auc_score(self.y_val.ravel(), val_hat.ravel())
+        return fpr, tpr, val_auroc
     
     def get_weights(self):
         return self.model.get_weights()
     
+    def get_data(self, split="train"):
+        if split == "train":
+            return self.X_train, self.y_train
+        if split == "val":
+            return self.X_val, self.y_val
+    
     def set_weights(self, weights):
         self.model.set_weights(weights)
 
-    def train_to_convergence(self):
+    def train_to_convergence(self, log_filename):
         my_callbacks = []
         batch_size = 32
         if self.X_train.shape[0] < 100:
@@ -65,6 +62,7 @@ class LocalHospital:
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
         my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = batch_size, steps_per_epoch = self.X_train.shape[0]//batch_size,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//batch_size, callbacks=my_callbacks, shuffle=True)
 
@@ -153,7 +151,7 @@ class ExternalValidationHospital:
         self.X_data = np.moveaxis(self.X_data,1,-1)
         print(self.X_data.shape)
         print(self.y_data.shape)
-        self.train_val_test_split()
+        #self.train_val_test_split()
 
     def load_model(self, model):
         self.model = model
@@ -171,8 +169,17 @@ class ExternalValidationHospital:
         print(self.model.evaluate(self.X_test, self.y_test))
         fpr, tpr, _ = roc_curve(self.y_test.ravel(), test_hat.ravel())
         test_auroc = roc_auc_score(self.y_test.ravel(), test_hat.ravel())
-
         return fpr, tpr, test_auroc
+
+    def predict(self):
+        """
+        Predict on all data
+        """
+        y_hat = self.model.predict(self.X_data)
+        print(self.model.evaluate(self.X_data, self.y_data))
+        fpr, tpr, _ = roc_curve(self.y_data.ravel(), y_hat.ravel())
+        auroc = roc_auc_score(self.y_data.ravel(), y_hat.ravel())
+        return fpr, tpr, auroc
     
     def get_weights(self):
         return self.model.get_weights()
@@ -185,7 +192,7 @@ class ExternalValidationHospital:
     def set_weights(self, weights):
         self.model.set_weights(weights)
 
-    def train_to_convergence(self):
+    def train_to_convergence(self, log_filename):
         my_callbacks = []
         monitor_variable = "val_AUROC"
         monitor_mode = "max"
@@ -194,6 +201,7 @@ class ExternalValidationHospital:
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
         my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = 32, steps_per_epoch = self.X_train.shape[0]//32,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//32, callbacks=my_callbacks)
 
@@ -209,6 +217,8 @@ class CentralTrainer:
         #self.y_data
         self.model = build_iception_model(input_shape, output_shape)
         self.switch = 0
+        self.switch_train = 0
+        self.switch_val = 0
 
     def load_data(self, X_path, y_path):
         print("Loading " + X_path)
@@ -223,10 +233,32 @@ class CentralTrainer:
             self.y_data = np.vstack([self.y_data, y_temp]) 
         self.switch = 1
 
+    def load_train_data_from_centre(self, X_data, y_data):
+        print("Loading data...")
+ 
+        if self.switch_train == 0:
+            self.X_train = X_data
+            self.y_train = y_data
+        else:
+            self.X_train = np.vstack([self.X_train, X_data])
+            self.y_train = np.vstack([self.y_train, y_data]) 
+        self.switch_train = 1
+
+    def load_val_data_from_centre(self, X_data, y_data):
+        print("Loading data...")
+ 
+        if self.switch_val == 0:
+            self.X_val = X_data
+            self.y_val = y_data
+        else:
+            self.X_val = np.vstack([self.X_val, X_data])
+            self.y_val = np.vstack([self.y_val, y_data]) 
+        self.switch_val = 1
+
     def train_val_split(self):
         self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(self.X_data, self.y_data, test_size=0.15, random_state=42) #20% test
 
-    def train_to_convergence(self):
+    def train_to_convergence(self, log_filename):
         my_callbacks = []
         monitor_variable = "val_AUROC"
         monitor_mode = "max"
@@ -235,6 +267,7 @@ class CentralTrainer:
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
         my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = 32, steps_per_epoch = self.X_train.shape[0]//32,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//32, callbacks=my_callbacks)
 
