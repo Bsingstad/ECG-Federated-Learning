@@ -58,10 +58,10 @@ class LocalHospital:
         monitor_variable = "val_AUROC"
         monitor_mode = "max"
         temp_model_folder = "./models/temp_folder/"
-        temp_model_name = "model_weights_temp.h5"
+        temp_model_name = "model_weights_temp.weights.h5"
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
-        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, save_weights_only=True, verbose=1))
         my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = batch_size, steps_per_epoch = self.X_train.shape[0]//batch_size,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//batch_size, callbacks=my_callbacks, shuffle=True)
@@ -197,10 +197,10 @@ class ExternalValidationHospital:
         monitor_variable = "val_AUROC"
         monitor_mode = "max"
         temp_model_folder = "./models/temp_folder/"
-        temp_model_name = "model_weights_temp.h5"
+        temp_model_name = "model_weights_temp.weights.h5"
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
-        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, save_weights_only=True, verbose=1))
         my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = 32, steps_per_epoch = self.X_train.shape[0]//32,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//32, callbacks=my_callbacks)
@@ -263,10 +263,10 @@ class CentralTrainer:
         monitor_variable = "val_AUROC"
         monitor_mode = "max"
         temp_model_folder = "./models/temp_folder/"
-        temp_model_name = "model_weights_temp.h5"
+        temp_model_name = "model_weights_temp.weights.h5"
         os.makedirs(temp_model_folder, exist_ok=True)
         my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
-        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, verbose=1))
+        my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, save_weights_only=True, verbose=1))
         my_callbacks.append(tf.keras.callbacks.CSVLogger(log_filename))
         self.model.fit(self.X_train, self.y_train, epochs = 100, batch_size = 32, steps_per_epoch = self.X_train.shape[0]//32,
                        validation_data=(self.X_val, self.y_val), validation_steps = self.X_val.shape[0]//32, callbacks=my_callbacks)
