@@ -59,13 +59,11 @@ def run(args):
 
     ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
     ptb_xl.load_model(model)
-    fpr, tpr, test_auroc = ptb_xl.predict_test()
-    print("AUROC on test data without TFL = ", test_auroc)
-    ptb_xl.prepare_for_transfer_learning()
-    ptb_xl.train_to_convergence()
-    fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
-    print("AUROC on test data with TFL = ", test_auroc_tfl)
-    pd.DataFrame({"fpr":fpr_tfl, "tpr": tpr_tfl}).to_csv("collaborative_data_sharing_roc.csv")
+    fpr, tpr, test_auroc = ptb_xl.predict()
+    print("AUROC on PTB-XL = ", test_auroc)
+
+    pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("collaborative_data_sharing_roc.csv")
+
 
 if __name__ == '__main__':
     run(get_parser().parse_args(sys.argv[1:]))

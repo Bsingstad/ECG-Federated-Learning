@@ -1,0 +1,9 @@
+Epoch 20: early stopping
+Restoring model weights from the end of the best epoch: 15.
+Training complete
+(21837, 1000, 12)
+(21837, 30)
+683/683 ━━━━━━━━━━━━━━━━━━━━ 9s 12ms/step
+683/683 ━━━━━━━━━━━━━━━━━━━━ 9s 13ms/step - AUPRC: 0.3284 - AUROC: 0.6701 - loss: 0.0496
+[0.05238506942987442, 0.6748943328857422, 0.32365596294403076]
+AUROC on PTB-XL =  0.8958145211368115
