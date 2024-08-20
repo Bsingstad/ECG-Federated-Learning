@@ -36,23 +36,23 @@ def run(args):
     georgia = LocalHospital("georgia", os.path.join(args.data_folder, "X_data_georgia.npy"),os.path.join(args.data_folder, "y_data_georgia.npy"))
     chinaphys = LocalHospital("chinaphys", os.path.join(args.data_folder, "X_data_chinaphys.npy"),os.path.join(args.data_folder, "y_data_chinaphys.npy"))
     
-    central_trainer.load_train_data_from_centre(st_petersburg.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(st_petersburg.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*st_petersburg.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*st_petersburg.get_data(split="val"))
 
-    central_trainer.load_train_data_from_centre(ptb_diag.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(ptb_diag.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*ptb_diag.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*ptb_diag.get_data(split="val"))
 
-    central_trainer.load_train_data_from_centre(chapman.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(chapman.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*chapman.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*chapman.get_data(split="val"))
 
-    central_trainer.load_train_data_from_centre(ningbo.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(ningbo.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*ningbo.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*ningbo.get_data(split="val"))
 
-    central_trainer.load_train_data_from_centre(georgia.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(georgia.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*georgia.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*georgia.get_data(split="val"))
 
-    central_trainer.load_train_data_from_centre(chinaphys.get_data(split="train"))
-    central_trainer.load_val_data_from_centre(chinaphys.get_data(split="val"))
+    central_trainer.load_train_data_from_centre(*chinaphys.get_data(split="train"))
+    central_trainer.load_val_data_from_centre(*chinaphys.get_data(split="val"))
 
     central_trainer.train_to_convergence("./collaborative_data_sharing.csv")
     model = central_trainer.get_model()
