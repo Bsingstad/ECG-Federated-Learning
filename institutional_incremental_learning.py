@@ -95,6 +95,7 @@ def run(args):
     pd.DataFrame({"fpr":chn_fpr, "tpr": chn_tpr}).to_csv("institutional_incr_learning_roc_chinaphys.csv")
 
     ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
+    ptb_xl.load_model(model)
     ptb_xl.set_weights(final_weights)
     fpr, tpr, test_auroc = ptb_xl.predict()
     print("AUROC on PTB-XL = ", test_auroc)
