@@ -11,6 +11,7 @@ import argparse
 import sys
 import yaml
 import os
+import pandas as pd
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -52,36 +53,56 @@ def run(args):
 
     
     for i in range(NUM_ROUNDS):
-        st_petersburg.train_to_convergence()
+        #st_petersburg.train_to_convergence()
         temp_weights = st_petersburg.get_weights()
+        stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_val()
+        print(f"AUROC on st.petersburg diag round {i}= ", stp_roc)
+        pd.DataFrame({"fpr":stp_fpr, "tpr": stp_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_st_peter_round_{i}.csv")
 
         ptb_diag.set_weights(temp_weights)
         ptb_diag.train_to_convergence()
         temp_weights = ptb_diag.get_weights()
+        ptb_fpr, ptb_tpr , ptb_roc = ptb_diag.predict_val() 
+        print(f"AUROC on ptb diag round {i}= ", ptb_roc)
+        pd.DataFrame({"fpr":ptb_fpr, "tpr": ptb_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_ptb_diag_round_{i}.csv")
 
         chapman.set_weights(temp_weights)
         chapman.train_to_convergence()
         temp_weights = chapman.get_weights()
+        chp_fpr, chp_tpr , chp_roc = chapman.predict_val() 
+        print(f"AUROC on chapman round {i} = ", chp_roc)
+        pd.DataFrame({"fpr":chp_fpr, "tpr": chp_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_chapman_round_{i}.csv")
 
         ningbo.set_weights(temp_weights)
         ningbo.train_to_convergence()
         temp_weights = ningbo.get_weights()
+        ngb_fpr, ngb_tpr , ngb_roc = ningbo.predict_val() 
+        print(f"AUROC on ningbo round {i} = ", ngb_roc)
+        pd.DataFrame({"fpr":ngb_fpr, "tpr": ngb_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_ningbo_round_{i}.csv")
+
 
         georgia.set_weights(temp_weights)
         georgia.train_to_convergence()
         temp_weights = georgia.get_weights()
+        grg_fpr, grg_tpr , grg_roc = georgia.predict_val()
+        print(f"AUROC on georgia round {i}= ", grg_roc)
+        pd.DataFrame({"fpr":grg_fpr, "tpr": grg_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_georgia_round_{i}csv")
+
 
         chinaphys.set_weights(temp_weights)
         chinaphys.train_to_convergence()
         temp_weights = chinaphys.get_weights()
+        chn_fpr, chn_tpr , chn_roc = chinaphys.predict_val()
+        print(f"AUROC on chinaphys round {i} = ", chn_roc)
+        pd.DataFrame({"fpr":chn_fpr, "tpr": chn_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_chinaphys_round_{i}.csv")
+
 
         ptb_xl.set_weights(temp_weights)
-        fpr, tpr, test_auroc = ptb_xl.predict_test()
-        print("AUROC on test data without TFL = ", test_auroc)
-        ptb_xl.prepare_for_transfer_learning()
-        ptb_xl.train_to_convergence()
-        fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
-        print("AUROC on test data with TFL = ", test_auroc_tfl)
+        fpr, tpr, test_auroc = ptb_xl.predict()
+        print(f"AUROC on PTB-XL round {i} = ", test_auroc)
+        pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("cycl_institutional_incr_learning_roc_PTB_round_{i}.csv")
+
+
 
 
 
