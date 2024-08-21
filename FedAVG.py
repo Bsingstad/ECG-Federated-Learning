@@ -49,7 +49,7 @@ def run(args):
     chinaphys = LocalHospital("chinaphys", os.path.join(args.data_folder, "X_data_chinaphys.npy"),os.path.join(args.data_folder, "y_data_chinaphys.npy"))
     chinaphys.load_model(model)
 
-    st_petersburg.train_to_convergence(f"./FedAVG_st_petersburg_history.csv")
+    #st_petersburg.train_to_convergence(f"./FedAVG_st_petersburg_history.csv")
     stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_val()
     pd.DataFrame({"fpr":stp_fpr, "tpr": stp_tpr}).to_csv("FedAVG_roc_st_peter_before.csv", index=False)
     ptb_diag.train_to_convergence(f"./FedAVG_ptb_diag_history.csv")

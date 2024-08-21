@@ -11,6 +11,7 @@ import argparse
 import sys
 import yaml
 import os
+import pandas as pd
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -57,15 +58,16 @@ def run(args):
     chinaphys.load_model(model)
     chinaphys.set_generator()
 
+    stp_roc_list = []
+    ptb_roc_list = []
+    chp_roc_list = []
+    ngb_roc_list = []
+    grg_roc_list = []
+    chn_roc_list = []
+    ptb_xl_list = []
+
     NUM_ROUNDS = 100
     for i in range(NUM_ROUNDS):
-
-        stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_test()
-        ptb_fpr, ptb_tpr , ptb_roc = ptb_diag.predict_test() 
-        chp_fpr, chp_tpr , chp_roc = chapman.predict_test() 
-        ngb_fpr, ngb_tpr , ngb_roc = ningbo.predict_test() 
-        grg_fpr, grg_tpr , grg_roc = georgia.predict_test() 
-        chn_fpr, chn_tpr , chn_roc = chinaphys.predict_test()
 
         stp_grads = st_petersburg.train_one_batch()
         ptb_grads = ptb_diag.train_one_batch()
@@ -90,14 +92,33 @@ def run(args):
         ningbo.set_weights(global_weights)
         georgia.set_weights(global_weights)
         chinaphys.set_weights(global_weights)
+        ptb_xl.set_weights(global_weights)
+
+        stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_val()
+        ptb_fpr, ptb_tpr , ptb_roc = ptb_diag.predict_val() 
+        chp_fpr, chp_tpr , chp_roc = chapman.predict_val() 
+        ngb_fpr, ngb_tpr , ngb_roc = ningbo.predict_val() 
+        grg_fpr, grg_tpr , grg_roc = georgia.predict_val() 
+        chn_fpr, chn_tpr , chn_roc = chinaphys.predict_val()
+        fpr_ptbxl, tpr_ptbxl, ptbxl_roc = ptb_xl.predict()
+
+        stp_roc_list.append(stp_roc)
+        ptb_roc_list.append(ptb_roc)
+        chp_roc_list.append(chp_roc)
+        ngb_roc_list.append(ngb_roc)
+        grg_roc_list.append(grg_roc)
+        chn_roc_list.append(chn_roc)
+        ptb_xl_list.append(ptbxl_roc)
 
     ptb_xl.set_weights(global_weights)
-    fpr, tpr, test_auroc = ptb_xl.predict_test()
-    print("AUROC on test data without TFL = ", test_auroc)
-    ptb_xl.prepare_for_transfer_learning()
-    ptb_xl.train_to_convergence()
-    fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
-    print("AUROC on test data with TFL = ", test_auroc_tfl)
+    fpr, tpr, test_auroc = ptb_xl.predict()
+    print("AUROC on PTB-XL = ", test_auroc)
+
+    pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("FedSGD_roc_PTBXL.csv", index=False)
+
+    pd.DataFrame({"st_petersburg":stp_roc_list, "ptb_diag": ptb_roc_list, "chapman":chp_roc_list,
+                  "ningbo":ngb_roc_list, "georgia": grg_roc_list, "china":chn_roc_list, "ptbxl":ptb_xl_list}).to_csv("training_history_FedSGD.csv", index=False)
+
 
 
 
