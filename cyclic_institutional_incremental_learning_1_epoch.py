@@ -11,6 +11,7 @@ import argparse
 import sys
 import yaml
 import os
+import pandas as pd
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -49,42 +50,83 @@ def run(args):
     chinaphys.load_model(model)
 
     ptb_xl = ExternalValidationHospital("PTB-XL", os.path.join(args.data_folder, "X_data_ptbxl.npy"), os.path.join(args.data_folder, "y_data_ptbxl.npy"))
-
+    ptb_xl.load_model(model)
     
+    stp_roc_list = []
+    ptb_roc_list = []
+    chp_roc_list = []
+    ngb_roc_list = []
+    grg_roc_list = []
+    chn_roc_list = []
+    test_auroc_list = []
+
     for i in range(NUM_ROUNDS):
         st_petersburg.train_one_epoch()
         temp_weights = st_petersburg.get_weights()
+        stp_fpr, stp_tpr , stp_roc = st_petersburg.predict_val()
+        print(f"AUROC on st.petersburg diag round {i}= ", stp_roc)
+        stp_roc_list.append(stp_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":stp_fpr, "tpr": stp_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_st_peter_round_{i}.csv", index=False)
 
         ptb_diag.set_weights(temp_weights)
         ptb_diag.train_one_epoch()
         temp_weights = ptb_diag.get_weights()
+        ptb_fpr, ptb_tpr , ptb_roc = ptb_diag.predict_val() 
+        print(f"AUROC on ptb diag round {i}= ", ptb_roc)
+        ptb_roc_list.append(ptb_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":ptb_fpr, "tpr": ptb_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_ptb_diag_round_{i}.csv", index=False)
 
         chapman.set_weights(temp_weights)
         chapman.train_one_epoch()
         temp_weights = chapman.get_weights()
+        chp_fpr, chp_tpr , chp_roc = chapman.predict_val() 
+        print(f"AUROC on chapman round {i} = ", chp_roc)
+        chp_roc_list.append(chp_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":chp_fpr, "tpr": chp_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_chapman_round_{i}.csv", index=False)
 
         ningbo.set_weights(temp_weights)
         ningbo.train_one_epoch()
         temp_weights = ningbo.get_weights()
+        ngb_fpr, ngb_tpr , ngb_roc = ningbo.predict_val() 
+        print(f"AUROC on ningbo round {i} = ", ngb_roc)
+        ngb_roc_list.append(ngb_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":ngb_fpr, "tpr": ngb_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_ningbo_round_{i}.csv", index=False)
+
 
         georgia.set_weights(temp_weights)
         georgia.train_one_epoch()
         temp_weights = georgia.get_weights()
+        grg_fpr, grg_tpr , grg_roc = georgia.predict_val()
+        print(f"AUROC on georgia round {i}= ", grg_roc)
+        grg_roc_list.append(grg_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":grg_fpr, "tpr": grg_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_georgia_round_{i}csv", index=False)
+
 
         chinaphys.set_weights(temp_weights)
         chinaphys.train_one_epoch()
         temp_weights = chinaphys.get_weights()
+        chn_fpr, chn_tpr , chn_roc = chinaphys.predict_val()
+        print(f"AUROC on chinaphys round {i} = ", chn_roc)
+        chn_roc_list.append(chn_roc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":chn_fpr, "tpr": chn_tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_chinaphys_round_{i}.csv", index=False)
+
 
         ptb_xl.set_weights(temp_weights)
-        fpr, tpr, test_auroc = ptb_xl.predict_test()
-        print("AUROC on test data without TFL = ", test_auroc)
-        ptb_xl.prepare_for_transfer_learning()
-        ptb_xl.train_to_convergence()
-        fpr_tfl, tpr_tfl, test_auroc_tfl = ptb_xl.predict_test()
-        print("AUROC on test data with TFL = ", test_auroc_tfl)
+        fpr, tpr, test_auroc = ptb_xl.predict()
+        print(f"AUROC on PTB-XL round {i} = ", test_auroc)
+        test_auroc_list.append(test_auroc)
+        if (i+1) % 10 == 0:
+            pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("cycl_institutional_incr_learning_1epoch_roc_PTBXL_round_{i}.csv", index=False)
 
 
-
+    pd.DataFrame({"st_petersburg":stp_roc_list, "ptb_diag": ptb_roc_list, "chapman":chp_roc_list,
+                  "ningbo":ngb_roc_list, "georgia": grg_roc_list, "china":chn_roc_list, "ptbxl":test_auroc_list}).to_csv("training_history_cycl_inst_learn_1_epoch.csv", index=False)
 
 if __name__ == '__main__':
     run(get_parser().parse_args(sys.argv[1:]))
