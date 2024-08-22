@@ -81,6 +81,7 @@ def run(args):
         temp_weights = chapman.get_weights()
         chp_fpr, chp_tpr , chp_roc = chapman.predict_val() 
         print(f"AUROC on chapman round {i} = ", chp_roc)
+        chp_roc_list.append(chp_roc)
         pd.DataFrame({"fpr":chp_fpr, "tpr": chp_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_chapman_round_{i}.csv")
 
         ningbo.set_weights(temp_weights)

@@ -114,13 +114,7 @@ def run(args):
     fpr, tpr, test_auroc = ptb_xl.predict()
     print("AUROC on PTB-XL = ", test_auroc)
 
-    print("list len stp_roc_list", len(stp_roc_list))
-    print("list len ptb_roc_list", len(ptb_roc_list)) 
-    print("list len chp_roc_list", len(chp_roc_list)) 
-    print("list len ngb_roc_list", len(ngb_roc_list)) 
-    print("list len grg_roc_list", len(grg_roc_list)) 
-    print("list len chn_roc_list", len(chn_roc_list)) 
-    print("list len ptb_xl_list", len(ptb_xl_list))
+ 
     
     pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("FedSGD_roc_PTBXL.csv", index=False)
 
