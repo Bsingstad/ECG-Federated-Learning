@@ -115,7 +115,7 @@ def run(args):
         fpr, tpr, test_auroc = ptb_xl.predict()
         print(f"AUROC on PTB-XL round {i} = ", test_auroc)
         test_auroc_list.append(test_auroc)
-        pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("cycl_institutional_incr_learning_roc_PTB_round_{i}.csv")
+        pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv(f"cycl_institutional_incr_learning_roc_PTB_round_{i}.csv")
 
 
     pd.DataFrame({"st_petersburg":stp_roc_list, "ptb_diag": ptb_roc_list, "chapman":chp_roc_list,

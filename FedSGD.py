@@ -66,7 +66,7 @@ def run(args):
     chn_roc_list = []
     ptb_xl_list = []
 
-    NUM_ROUNDS = 100
+    NUM_ROUNDS = 200
     for i in range(NUM_ROUNDS):
 
         stp_grads = st_petersburg.train_one_batch()

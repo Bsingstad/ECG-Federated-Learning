@@ -122,7 +122,7 @@ def run(args):
         print(f"AUROC on PTB-XL round {i} = ", test_auroc)
         test_auroc_list.append(test_auroc)
         if (i+1) % 10 == 0:
-            pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("cycl_institutional_incr_learning_1epoch_roc_PTBXL_round_{i}.csv", index=False)
+            pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv(f"cycl_institutional_incr_learning_1epoch_roc_PTBXL_round_{i}.csv", index=False)
 
 
     pd.DataFrame({"st_petersburg":stp_roc_list, "ptb_diag": ptb_roc_list, "chapman":chp_roc_list,
