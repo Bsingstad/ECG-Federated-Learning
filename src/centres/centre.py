@@ -3,8 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import shutil
 import os
+from sklearn.model_selection import StratifiedKFold
 
 
 class LocalHospital:
@@ -103,6 +105,36 @@ class LocalHospital:
     
         gradients = tape.gradient(loss, self.model.trainable_variables)
         return gradients
+    
+    def cv_internal(self):
+        skf = StratifiedKFold(n_splits=10)
+        batch_size = 32
+        monitor_variable = "val_AUROC"
+        monitor_mode = "max"
+        temp_model_folder = "./models/temp_folder/"
+        temp_model_name = "model_weights_temp.weights.h5"
+        cv_auroc = []
+        for i, (train_index, test_index) in enumerate(skf.split(self.X_data, self.y_data)):
+            print(f"Fold {i}:")
+            my_callbacks = []
+            
+            X_cv_train, X_cv_test, y_cv_train, y_cv_test = self.X_data[train_index], self.X_data[test_index], self.y_data[train_index], self.y_data[test_index]
+            my_callbacks.append(tf.keras.callbacks.EarlyStopping(monitor=monitor_variable, mode=monitor_mode, patience=5, verbose=1, restore_best_weights=True))
+            my_callbacks.append(tf.keras.callbacks.ModelCheckpoint(temp_model_folder + temp_model_name, monitor=monitor_variable, mode=monitor_mode, save_best_only=True, save_weights_only=True, verbose=1))
+            my_callbacks.append(tf.keras.callbacks.CSVLogger(f"./cv_ptbxl_cv_round_{i}.csv"))
+            self.model.fit(X_cv_train, y_cv_train, epochs = 100, batch_size = batch_size, steps_per_epoch = X_cv_train.shape[0]//batch_size,
+                       validation_data=(X_cv_test, y_cv_test), validation_steps = y_cv_test.shape[0]//batch_size, callbacks=my_callbacks, shuffle=True)
+
+            self.model.load_weights(temp_model_folder + temp_model_name)
+            test_hat = self.model.predict(X_cv_test)
+            cv_auroc.append(roc_auc_score(y_cv_test.ravel(), test_hat.ravel()))
+            fpr, tpr, _ = roc_curve(y_cv_test.ravel(), test_hat.ravel())
+            pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv(f"ptb_cv_round_{i}.csv", index=False)
+        pd.DataFrame({"ptb_xl": cv_auroc}).to_csv("cv_results_ptb_xl.csv", index=False)
+
+
+
+
     
 
 class CentralModelDistributor:

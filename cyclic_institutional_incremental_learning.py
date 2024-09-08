@@ -12,6 +12,7 @@ import sys
 import yaml
 import os
 import pandas as pd
+import numpy as np
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -59,6 +60,8 @@ def run(args):
     grg_roc_list = []
     chn_roc_list = []
     test_auroc_list = []
+
+    best_mean_val = 0
     
     for i in range(NUM_ROUNDS):
         #st_petersburg.train_to_convergence(f"./cyclic_institutional_incr_learning_st_peter_{i}.csv")
@@ -110,12 +113,24 @@ def run(args):
         chn_roc_list.append(chn_roc)
         pd.DataFrame({"fpr":chn_fpr, "tpr": chn_tpr}).to_csv(f"cycl_institutional_incr_learning_roc_chinaphys_round_{i}.csv")
 
+        temp_mean_val = np.mean([stp_roc,ptb_roc,chp_roc,ngb_roc,grg_roc,chn_roc])
+        if temp_mean_val > best_mean_val:
+            best_mean_val = temp_mean_val
+            best_global_weights = temp_weights
 
         ptb_xl.set_weights(temp_weights)
         fpr, tpr, test_auroc = ptb_xl.predict()
         print(f"AUROC on PTB-XL round {i} = ", test_auroc)
         test_auroc_list.append(test_auroc)
         pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv(f"cycl_institutional_incr_learning_roc_PTB_round_{i}.csv")
+
+
+    ptb_xl.set_weights(best_global_weights)
+    fpr, tpr, test_auroc = ptb_xl.predict()
+    print("AUROC on PTB-XL = ", test_auroc)
+
+    pd.DataFrame({"fpr":fpr, "tpr": tpr}).to_csv("cycl_institutional_incr_learning_roc_PTBXL_best_weights.csv", index=False)
+
 
 
     pd.DataFrame({"st_petersburg":stp_roc_list, "ptb_diag": ptb_roc_list, "chapman":chp_roc_list,
