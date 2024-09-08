@@ -61,8 +61,8 @@ def build_iception_model(input_shape, num_classes, clf="binary", depth=6, use_re
     output_layer = tf.keras.layers.Dense(units = num_classes ,activation="sigmoid")(gap_layer)
     model = tf.keras.models.Model(inputs=input_layer, outputs=output_layer)
     model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate = lr_init), loss = tf.keras.losses.BinaryFocalCrossentropy(), #loss = tf.keras.losses.CategoricalCrossentropy(), 
-        #metrics = [tf.keras.metrics.AUC(curve='ROC',name="AUROC", multi_label=True, num_labels=num_classes),tf.keras.metrics.AUC(curve='PR',name="AUPRC", multi_label=True, num_labels=num_classes)])
-        metrics = [ROCAUCMetricMultiLabel(average='macro')])
+        metrics = [tf.keras.metrics.AUC(curve='ROC',name="AUROC", multi_label=False),tf.keras.metrics.AUC(curve='PR',name="AUPRC", multi_label=False)])
+        #metrics = [ROCAUCMetricMultiLabel(average='macro')])
     
     print("Inception model built.")
     return model

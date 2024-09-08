@@ -141,6 +141,7 @@ class CentralModelDistributor:
         summed_grads = [sum(g) for g in zip(*self.grads_list)]
         self.optimizer.apply_gradients(zip(summed_grads, self.model.trainable_variables))
         self.grads_list = []
+
     
 
 class ExternalValidationHospital:

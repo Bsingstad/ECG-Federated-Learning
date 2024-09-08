@@ -12,6 +12,7 @@ import sys
 import yaml
 import os
 import pandas as pd
+import numpy as np
 
 from src.models.model import *
 from src.centres.centre import LocalHospital, CentralModelDistributor, ExternalValidationHospital, CentralTrainer
@@ -60,6 +61,8 @@ def run(args):
     chn_roc_list = []
     ptb_xl_list = []
 
+    best_mean_val = 0
+
     for i in range(NUM_ROUNDS):
 
         #st_petersburg.train_to_convergence()
@@ -94,6 +97,12 @@ def run(args):
         chn_fpr, chn_tpr , chn_roc = chinaphys.predict_val()
         fpr_ptbxl, tpr_ptbxl, ptbxl_roc = ptb_xl.predict()
 
+        temp_mean_val = np.mean([stp_roc,ptb_roc,chp_roc,ngb_roc,grg_roc,chn_roc])
+        if temp_mean_val > best_mean_val:
+            best_mean_val = temp_mean_val
+            best_global_weights = global_weights
+
+
         stp_roc_list.append(stp_roc)
         ptb_roc_list.append(ptb_roc)
         chp_roc_list.append(chp_roc)
@@ -102,7 +111,7 @@ def run(args):
         chn_roc_list.append(chn_roc)
         ptb_xl_list.append(ptbxl_roc)
 
-    ptb_xl.set_weights(global_weights)
+    ptb_xl.set_weights(best_global_weights)
     fpr, tpr, test_auroc = ptb_xl.predict()
     print("AUROC on PTB-XL = ", test_auroc)
 
