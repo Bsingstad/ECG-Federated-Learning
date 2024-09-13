@@ -1,5 +1,7 @@
 # ECG Federated Learning
 
+##This project implements 6 different privacy-preserving collaborative learning methods for training multi-institutional ECG classification models.
+
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
